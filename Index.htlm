@@ -1,0 +1,135 @@
+HTML
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101820">
+<title>PIKKIO4 - Investimenti AI</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#101820;color:#f2f6f7;font-family:Arial,sans-serif;padding:20px}
+header{text-align:center;padding:20px 0}
+h1{color:#51e0b0;font-size:34px;margin:5px}
+h2{color:#51e0b0}
+.card{background:#1c2933;padding:18px;border-radius:14px;margin:15px 0}
+input,button{padding:12px;border:0;border-radius:8px;margin:5px 0;font-size:15px}
+input{width:100%;background:#f2f6f7;color:#111}
+button{background:#51e0b0;color:#102019;font-weight:bold;cursor:pointer}
+small{color:#aab8c0}
+.item{border-bottom:1px solid #40515d;padding:12px 0}
+.remove{background:#bd5555;color:white;float:right}
+</style>
+</head>
+<body>
+<header>
+<h1>PIKKIO4</h1>
+<p>Il tuo radar intelligente degli investimenti</p>
+<small>Portafoglio personale · Radar mondiale</small>
+</header>
+
+<div class="card">
+<h2>📊 Il mio portafoglio</h2>
+<div id="totale">Investimenti registrati: 0</div>
+<div id="lista"></div>
+</div>
+
+<div class="card">
+<h2>➕ Aggiungi investimento</h2>
+<input id="titolo" placeholder="Nome società o ticker (es. ENEL)">
+<input id="quantita" type="number" step="any" placeholder="Quantità di azioni">
+<input id="prezzo" type="number" step="any" placeholder="Prezzo medio di acquisto">
+<button onclick="aggiungi()">AGGIUNGI AL PORTAFOGLIO</button>
+</div>
+
+<div class="card">
+<h2>🌍 Radar mondiale</h2>
+<p>Notizie internazionali che possono influenzare i mercati.</p>
+<button onclick="caricaNotizie()">AGGIORNA RADAR</button>
+<div id="notizie"><small>Premi aggiorna per caricare le notizie.</small></div>
+</div>
+
+<div class="card">
+<h2>🤖 PIKKIO AI</h2>
+<p>Obiettivo: incrociare investimenti, mercati ed eventi mondiali per individuare possibili rischi e opportunità.</p>
+<small>Le informazioni non costituiscono consigli finanziari. I dati di mercato in tempo reale saranno integrati successivamente.</small>
+</div>
+
+<script>
+let investimenti=JSON.parse(localStorage.getItem("pikkio4")||"[]");
+
+function salva(){
+ localStorage.setItem("pikkio4",JSON.stringify(investimenti));
+ mostra();
+}
+
+function aggiungi(){
+ const nome=document.getElementById("titolo").value.trim().toUpperCase();
+ const quantita=Number(document.getElementById("quantita").value);
+ const prezzo=Number(document.getElementById("prezzo").value);
+ if(!nome||quantita<=0||prezzo<=0){
+  alert("Inserisci tutti i dati correttamente");
+  return;
+ }
+ investimenti.push({nome,quantita,prezzo});
+ salva();
+ document.getElementById("titolo").value="";
+ document.getElementById("quantita").value="";
+ document.getElementById("prezzo").value="";
+}
+
+function elimina(i){
+ investimenti.splice(i,1);
+ salva();
+}
+
+function mostra(){
+ const lista=document.getElementById("lista");
+ lista.innerHTML="";
+ investimenti.forEach((x,i)=>{
+  const div=document.createElement("div");
+  div.className="item";
+  const testo=document.createElement("span");
+  testo.textContent=x.nome+" · "+x.quantita+" azioni · Prezzo medio: "+x.prezzo;
+  const btn=document.createElement("button");
+  btn.className="remove";
+  btn.textContent="Elimina";
+  btn.onclick=()=>elimina(i);
+  div.append(testo,btn);
+  lista.appendChild(div);
+ });
+ document.getElementById("totale").textContent=
+ "Investimenti registrati: "+investimenti.length;
+}
+
+async function caricaNotizie(){
+ const area=document.getElementById("notizie");
+ area.textContent="Caricamento notizie...";
+ try{
+  const url="https://api.gdeltproject.org/api/v2/doc/doc?query=stock%20market%20OR%20economy%20OR%20geopolitics&mode=ArtList&format=json&maxrecords=10&sort=DateDesc";
+  const risposta=await fetch(url);
+  if(!risposta.ok)throw new Error("Servizio non disponibile");
+  const dati=await risposta.json();
+  area.innerHTML="";
+  (dati.articles||[]).forEach(n=>{
+   const div=document.createElement("div");
+   div.className="item";
+   const link=document.createElement("a");
+   link.href=n.url;
+   link.target="_blank";
+   link.rel="noopener";
+   link.textContent=n.title;
+   link.style.color="#51e0b0";
+   div.appendChild(link);
+   area.appendChild(div);
+  });
+  if(!area.children.length)area.textContent="Nessuna notizia disponibile.";
+ }catch(e){
+  area.textContent="Radar momentaneamente non disponibile. Riprova più tardi.";
+ }
+}
+
+mostra();
+</script>
+</body>
+</html>
