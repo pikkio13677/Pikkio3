@@ -1,0 +1,15 @@
+{
+  "name": "pikkio3",
+  "version": "3.0.0",
+  "private": true,
+  "description": "PIKKIO 3 - portfolio and global event radar PWA",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,135 +1,60 @@
-HTML
-<!DOCTYPE html>
+<!doctype html>
 <html lang="it">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#101820">
-<title>PIKKIO4 - Investimenti AI</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;background:#101820;color:#f2f6f7;font-family:Arial,sans-serif;padding:20px}
-header{text-align:center;padding:20px 0}
-h1{color:#51e0b0;font-size:34px;margin:5px}
-h2{color:#51e0b0}
-.card{background:#1c2933;padding:18px;border-radius:14px;margin:15px 0}
-input,button{padding:12px;border:0;border-radius:8px;margin:5px 0;font-size:15px}
-input{width:100%;background:#f2f6f7;color:#111}
-button{background:#51e0b0;color:#102019;font-weight:bold;cursor:pointer}
-small{color:#aab8c0}
-.item{border-bottom:1px solid #40515d;padding:12px 0}
-.remove{background:#bd5555;color:white;float:right}
-</style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#071b16"><meta name="description" content="PIKKIO - Radar intelligente per i tuoi investimenti">
+<link rel="manifest" href="manifest.webmanifest"><link rel="stylesheet" href="style.css">
+<title>PIKKIO 3 — Global Investment Radar</title>
 </head>
 <body>
-<header>
-<h1>PIKKIO4</h1>
-<p>Il tuo radar intelligente degli investimenti</p>
-<small>Portafoglio personale · Radar mondiale</small>
+<header class="topbar">
+  <div class="brand"><div class="brandmark">✦</div><div><b>PIKKIO</b><small>GLOBAL INVESTMENT RADAR</small></div></div>
+  <button class="iconbtn" id="installBtn" hidden aria-label="Installa PIKKIO">＋</button>
 </header>
-
-<div class="card">
-<h2>📊 Il mio portafoglio</h2>
-<div id="totale">Investimenti registrati: 0</div>
-<div id="lista"></div>
-</div>
-
-<div class="card">
-<h2>➕ Aggiungi investimento</h2>
-<input id="titolo" placeholder="Nome società o ticker (es. ENEL)">
-<input id="quantita" type="number" step="any" placeholder="Quantità di azioni">
-<input id="prezzo" type="number" step="any" placeholder="Prezzo medio di acquisto">
-<button onclick="aggiungi()">AGGIUNGI AL PORTAFOGLIO</button>
-</div>
-
-<div class="card">
-<h2>🌍 Radar mondiale</h2>
-<p>Notizie internazionali che possono influenzare i mercati.</p>
-<button onclick="caricaNotizie()">AGGIORNA RADAR</button>
-<div id="notizie"><small>Premi aggiorna per caricare le notizie.</small></div>
-</div>
-
-<div class="card">
-<h2>🤖 PIKKIO AI</h2>
-<p>Obiettivo: incrociare investimenti, mercati ed eventi mondiali per individuare possibili rischi e opportunità.</p>
-<small>Le informazioni non costituiscono consigli finanziari. I dati di mercato in tempo reale saranno integrati successivamente.</small>
-</div>
-
-<script>
-let investimenti=JSON.parse(localStorage.getItem("pikkio4")||"[]");
-
-function salva(){
- localStorage.setItem("pikkio4",JSON.stringify(investimenti));
- mostra();
-}
-
-function aggiungi(){
- const nome=document.getElementById("titolo").value.trim().toUpperCase();
- const quantita=Number(document.getElementById("quantita").value);
- const prezzo=Number(document.getElementById("prezzo").value);
- if(!nome||quantita<=0||prezzo<=0){
-  alert("Inserisci tutti i dati correttamente");
-  return;
- }
- investimenti.push({nome,quantita,prezzo});
- salva();
- document.getElementById("titolo").value="";
- document.getElementById("quantita").value="";
- document.getElementById("prezzo").value="";
-}
-
-function elimina(i){
- investimenti.splice(i,1);
- salva();
-}
-
-function mostra(){
- const lista=document.getElementById("lista");
- lista.innerHTML="";
- investimenti.forEach((x,i)=>{
-  const div=document.createElement("div");
-  div.className="item";
-  const testo=document.createElement("span");
-  testo.textContent=x.nome+" · "+x.quantita+" azioni · Prezzo medio: "+x.prezzo;
-  const btn=document.createElement("button");
-  btn.className="remove";
-  btn.textContent="Elimina";
-  btn.onclick=()=>elimina(i);
-  div.append(testo,btn);
-  lista.appendChild(div);
- });
- document.getElementById("totale").textContent=
- "Investimenti registrati: "+investimenti.length;
-}
-
-async function caricaNotizie(){
- const area=document.getElementById("notizie");
- area.textContent="Caricamento notizie...";
- try{
-  const url="https://api.gdeltproject.org/api/v2/doc/doc?query=stock%20market%20OR%20economy%20OR%20geopolitics&mode=ArtList&format=json&maxrecords=10&sort=DateDesc";
-  const risposta=await fetch(url);
-  if(!risposta.ok)throw new Error("Servizio non disponibile");
-  const dati=await risposta.json();
-  area.innerHTML="";
-  (dati.articles||[]).forEach(n=>{
-   const div=document.createElement("div");
-   div.className="item";
-   const link=document.createElement("a");
-   link.href=n.url;
-   link.target="_blank";
-   link.rel="noopener";
-   link.textContent=n.title;
-   link.style.color="#51e0b0";
-   div.appendChild(link);
-   area.appendChild(div);
-  });
-  if(!area.children.length)area.textContent="Nessuna notizia disponibile.";
- }catch(e){
-  area.textContent="Radar momentaneamente non disponibile. Riprova più tardi.";
- }
-}
-
-mostra();
-</script>
-</body>
-</html>
+<main>
+  <section class="welcome">
+    <div><p class="eyebrow">IL TUO CENTRO DI CONTROLLO</p><h1>Investi con<br><em>più consapevolezza.</em></h1><p class="sub">I tuoi investimenti. Gli eventi del mondo. Una sola vista.</p></div>
+    <div class="orb"><span>◎</span></div>
+  </section>
+  <nav class="tabs" aria-label="Navigazione">
+    <button class="tab active" data-tab="home">Panoramica</button><button class="tab" data-tab="portfolio">Portafoglio</button><button class="tab" data-tab="radar">Radar AI</button><button class="tab" data-tab="signals">Segnali</button>
+  </nav>
+  <section id="home" class="view active">
+    <div class="section-head"><div><p class="eyebrow">IL TUO PORTAFOGLIO</p><h2>La tua situazione</h2></div><span class="tag" id="connectionStatus">CONNESSIONE IN ATTESA</span></div>
+    <article class="hero-card"><div class="muted" id="totalLabel">Valore di carico</div><div class="total" id="totalValue">€ 0,00</div><div class="hero-foot"><span id="holdingCount">0 strumenti</span><span>Quantità × prezzo medio</span></div></article>
+    <div class="section-head compact"><h3>Radar globale</h3><button class="textbtn" data-go="radar">Apri radar ↗</button></div>
+    <article class="feature-card"><div class="feature-icon">◎</div><div><b>Il mondo si muove. E i mercati reagiscono.</b><p>PIKKIO incrocia notizie globali e titoli in portafoglio. I dati disponibili e la loro freschezza sono sempre indicati.</p></div></article>
+    <div class="section-head compact"><h3>I tuoi strumenti</h3><button class="textbtn" data-go="portfolio">Gestisci ↗</button></div>
+    <div id="homeHoldings" class="holding-list"></div>
+    <p class="disclaimer">Il valore di mercato viene mostrato solo quando il provider restituisce una quotazione valida. I dati possono essere ritardati. Le analisi sono informative, non consigli personalizzati di investimento.</p>
+  </section>
+  <section id="portfolio" class="view">
+    <div class="section-head"><div><p class="eyebrow">I TUOI ASSET</p><h2>Portafoglio</h2></div></div>
+    <div class="action-row"><button class="primary" id="addBtn">＋ Aggiungi titolo</button><button class="secondary" id="refreshPrices">↻ Aggiorna quotazioni</button><button class="secondary" id="exportCSV">⇩ Esporta CSV</button><label class="secondary upload">⇧ Importa CSV<input type="file" id="csvFile" accept=".csv,text/csv" hidden></label></div>
+    <div id="portfolioList" class="holding-list"></div>
+    <p class="hint">CSV: ticker,nome,quantita,prezzo_medio — punto o virgola per i decimali. Per le azioni USA usa il ticker standard; per altri mercati può servire il suffisso del provider.</p><p class="hint" id="quoteStatus">Quotazioni non ancora aggiornate.</p>
+  </section>
+  <section id="radar" class="view">
+    <div class="section-head"><div><p class="eyebrow">GLOBAL IMPACT</p><h2>Radar mondiale</h2></div><span class="tag warning" id="newsStatus">CARICAMENTO FONTI</span></div>
+    <article class="notice"><b>Notizie internazionali</b><p>Feed globale di articoli recenti. L’impatto è stimato in base alle parole chiave e ai settori coinvolti: verifica sempre le fonti originali.</p></article><div id="newsList" class="holding-list"><p class="hint">Caricamento notizie…</p></div>
+    <div class="event"><div class="event-symbol">⚡</div><div><span class="event-type">ENERGIA E MATERIE PRIME</span><h3>Prezzi e approvvigionamenti</h3><p>Shock energetici o scarsità di materie prime possono influenzare produttori, trasporti e industria.</p><span class="impact">Monitoraggio</span></div></div>
+    <div class="event"><div class="event-symbol">⌂</div><div><span class="event-type">BANCHE CENTRALI</span><h3>Tassi e politica monetaria</h3><p>Le decisioni sui tassi possono incidere su banche, obbligazioni e società in crescita.</p><span class="impact">Impatto potenziale</span></div></div>
+    <div class="event"><div class="event-symbol">⌘</div><div><span class="event-type">TECNOLOGIA E AI</span><h3>Innovazione e regolamentazione</h3><p>Nuovi investimenti, concorrenza e regole possono cambiare le prospettive del settore.</p><span class="impact">Opportunità / rischio</span></div></div>
+    <div class="event"><div class="event-symbol">◉</div><div><span class="event-type">GEOPOLITICA</span><h3>Conflitti, dazi e commercio</h3><p>Le tensioni internazionali possono alterare catene di fornitura, valute e prezzi delle materie prime.</p><span class="impact">Monitoraggio</span></div></div>
+  </section>
+  <section id="signals" class="view">
+    <div class="section-head"><div><p class="eyebrow">PERSONAL ALERTS</p><h2>Segnali PIKKIO</h2></div></div>
+    <article class="notice"><b>Analisi del portafoglio</b><p>Gli avvisi collegano notizie e settori dei titoli posseduti. Non sono ordini né raccomandazioni automatiche di acquisto o vendita.</p></article><div class="action-row"><button class="primary" id="runAI">✦ Analisi AI delle notizie</button></div><article class="notice" id="aiResult"><b>Analisi AI non ancora eseguita.</b><p>Per attivarla configura OPENAI_API_KEY sul server. In assenza della chiave restano disponibili le corrispondenze automatiche preliminari.</p></article><div id="signalList" class="holding-list"><p class="hint">In attesa di notizie e portafoglio…</p></div>
+    <div class="signal-example"><span class="signal-label risk">ESEMPIO NON OPERATIVO</span><h3>Possibile rischio</h3><p>Un evento geopolitico ipotetico potrebbe influenzare la catena di fornitura di un settore. Da verificare con fonti e dati aggiornati.</p></div>
+    <div class="signal-example"><span class="signal-label opportunity">ESEMPIO NON OPERATIVO</span><h3>Possibile opportunità</h3><p>Una notizia ipotetica di investimento in un settore può meritare approfondimento, senza implicare un acquisto.</p></div>
+  </section>
+</main>
+<footer><span>PIKKIO 3 © 2026</span><span>Costruito per investire con criterio.</span></footer>
+<dialog id="holdingDialog"><form method="dialog" id="holdingForm"><div class="dialog-head"><h2 id="dialogTitle">Aggiungi investimento</h2><button class="iconbtn" value="cancel" aria-label="Chiudi">×</button></div>
+<label>Ticker<input name="ticker" placeholder="Es. AAPL" required maxlength="12"></label>
+<label>Nome azienda<input name="name" placeholder="Es. Apple" maxlength="60"></label>
+<div class="form-grid"><label>Quantità<input name="quantity" type="number" min="0.000001" step="any" required></label><label>Prezzo medio (€)<input name="price" type="number" min="0" step="any" required></label></div>
+<div class="dialog-actions"><button class="secondary" value="cancel">Annulla</button><button class="primary" id="saveHolding" value="default">Salva titolo</button></div></form></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body></html>
