@@ -1,0 +1,14 @@
+{
+  "id": "./",
+  "name": "PIKKIO Global Investment Radar",
+  "short_name": "PIKKIO",
+  "description": "Il tuo centro di controllo per gli investimenti e gli eventi globali.",
+  "lang": "it",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#071b16",
+  "theme_color": "#071b16",
+  "icons": [{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

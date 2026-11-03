@@ -1,0 +1,22 @@
+PIKKIO5 — FILE DA AGGIUNGERE AL REPOSITORY
+
+Questi file completano la veste grafica, l'installazione PWA e il server API.
+
+FILE INCLUSI
+- style.css: grafica verde bosco e oro
+- manifest.webmanifest, sw.js, icon.svg: installazione PWA
+- server.js: server Express con API notizie, quotazioni, cambi e analisi AI
+- package.json: avvio del server
+- render.yaml: configurazione iniziale per Render
+- 
+COME CARICARLI DA TELEFONO
+1. Apri il repository GitHub pikkio13677/Pikkio3.
+2. Premi Add file > Upload files.
+3. Estrai questo ZIP sul telefono prima di caricare i singoli file.
+4. Carica i file nella cartella principale del repository (non dentro una sottocartella).
+5. Se GitHub chiede di sostituire package.json o index.html, conferma.
+6. Premi Commit changes.
+
+NOTA IMPORTANTE
+GitHub Pages può mostrare la parte statica, ma NON esegue server.js. Per attivare le API occorre creare un servizio Web su Render collegato allo stesso repository. La variabile OPENAI_API_KEY va inserita solo nelle Environment Variables del servizio Render: non va mai scritta nei file o nel repository.
+Le quotazioni possono essere ritardate e dipendono dalla disponibilità del provider. Le analisi sono informative, non consulenza finanziaria.
