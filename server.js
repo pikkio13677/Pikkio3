@@ -5,7 +5,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 app.disable('x-powered-by');
 app.use(express.json({ limit: '1mb' }));
-JavaScript
+
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
