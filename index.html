@@ -7,37 +7,37 @@
 <title>PIKKIO 3 — Global Investment Radar</title>
 </head>
 <body>
-  <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const newsList = document.getElementById("newsList");
-  if (!newsList) return;
+  
 
-  const buttons = document.querySelectorAll("button");
+  
 
-  buttons.forEach(button => {
-    button.addEventListener("click", () => {
-      const filter = button.textContent.trim().toUpperCase();
 
-      Array.from(newsList.children).forEach(news => {
-        const content = news.textContent.toLowerCase();
+  
 
-        const isAI = /intelligenza artificiale|artificial intelligence|\bai\b|\bchatgpt\b/.test(content);
-        const isTech = /tecnologia|technology|software|hardware|digitale|robot|smartphone|computer/.test(content);
+  
+    
+      
 
-        let show = true;
+      
+        
 
-        if (filter === "INTELLIGENZA ARTIFICIALE") {
-          show = isAI;
-        } else if (filter === "TECNOLOGIA") {
-          show = isTech && !isAI;
-        }
+        
+      
 
-        news.style.display = show ? "" : "none";
-      });
-    });
-  });
-});
-</script>
+        
+
+        
+          
+      
+          
+        
+
+        
+      
+    
+  
+
+
 <header class="topbar">
   <div class="brand"><div class="brandmark">✦</div><div><b>PIKKIO</b><small>GLOBAL INVESTMENT RADAR</small></div></div>
   <button class="iconbtn" id="installBtn" hidden aria-label="Installa PIKKIO">＋</button>
