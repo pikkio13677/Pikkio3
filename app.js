@@ -55,6 +55,91 @@ function renderNews(){
 });
 function renderSignals(){const el=$('#signalList');if(!el)return;const matched=[];for(const n of newsItems){const text=(n.title+' '+(n.domain||'')).toLowerCase();for(const h of holdings){const ticker=h.ticker.toLowerCase(),name=(h.name||'').toLowerCase();if(text.includes(ticker)||(name.length>4&&text.includes(name))){matched.push({h,n,why:'Corrispondenza testuale'});continue}const sectors={energia:['oil','energy','gas','electricity','solar','wind','petrol','energia'],banche:['bank','rate','central bank','fed','ecb','bce','interest'],tecnologia:['artificial intelligence','chip','semiconductor','technology','ai','software'],geopolitica:['war','sanction','tariff','conflict','election','trade']};const sector=Object.entries(sectors).find(([k,words])=>words.some(w=>text.includes(w))&&((k==='energia'&&/en|oil|gas|renew|solar|petro/i.test(h.name+' '+ticker))||(k==='tecnologia'&&/tech|semi|chip|soft|ai|nvda|msft|goog/i.test(h.name+' '+ticker))||(k==='banche'&&/bank|fin|credit|visa|jpm/i.test(h.name+' '+ticker))||k==='geopolitica'));if(sector)matched.push({h,n,why:`Possibile collegamento settoriale: ${sector[0]}`})}}const unique=[...new Map(matched.map(x=>[x.h.ticker+'|'+x.n.url,x])).values()].slice(0,12);el.innerHTML=unique.length?unique.map(x=>`<article class="signal-example"><span class="signal-label risk">DA APPROFONDIRE · NON OPERATIVO</span><h3>${safe(x.h.name)} (${safe(x.h.ticker)})</h3><p>${safe(x.n.title)}</p><p>${safe(x.why)}. Corrispondenza automatica preliminare, non prova di impatto economico e non indicazione di acquisto/vendita.</p><a href="${safe(x.n.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold);font-size:12px">Verifica la notizia ↗</a></article>`).join(''):'<p class="hint">Nessuna corrispondenza rilevata. Questo non significa assenza di rischio.</p>'}
 async function loadNews(){try{const d=await api('/api/news');newsItems=Array.isArray(d.articles)?d.articles:[];renderNews();renderSignals();$('#newsStatus').textContent=`${newsItems.length} NOTIZIE CARICATE`;$('#connectionStatus').textContent='BACKEND COLLEGATO'}catch(e){$('#newsList').innerHTML='<p class="hint">Feed non disponibile: controlla la connessione e il server.</p>';$('#newsStatus').textContent='FONTE NON DISPONIBILE';$('#connectionStatus').textContent='BACKEND NON COLLEGATO'}}
+// PIKKIO - MERCATI GLOBALI
+const commodityAssets=[
+{name:'Petrolio WTI',ticker:'CL=F',unit:'USD/barile'},
+{name:'Petrolio Brent',ticker:'BZ=F',unit:'USD/barile'},
+{name:'Gas naturale',ticker:'NG=F',unit:'USD/MMBtu'},
+{name:'Oro',ticker:'GC=F',unit:'USD/oncia'},
+{name:'Argento',ticker:'SI=F',unit:'USD/oncia'},
+{name:'Rame',ticker:'HG=F',unit:'USD/libbra'},
+{name:'Platino',ticker:'PL=F',unit:'USD/oncia'},
+{name:'Palladio',ticker:'PA=F',unit:'USD/oncia'},
+{name:'Mais',ticker:'ZC=F',unit:'USD/bushel'},
+{name:'Grano',ticker:'ZW=F',unit:'USD/bushel'},
+{name:'Soia',ticker:'ZS=F',unit:'USD/bushel'},
+{name:'Caffè',ticker:'KC=F',unit:'USD/libbra'},
+{name:'Zucchero',ticker:'SB=F',unit:'USD/libbra'}
+];
+
+const topPlayers=[
+{name:'NVIDIA',ticker:'NVDA'},
+{name:'Microsoft',ticker:'MSFT'},
+{name:'Apple',ticker:'AAPL'},
+{name:'Alphabet',ticker:'GOOGL'},
+{name:'Amazon',ticker:'AMZN'},
+{name:'Meta',ticker:'META'},
+{name:'Broadcom',ticker:'AVGO'},
+{name:'TSMC',ticker:'TSM'}
+];
+
+async function loadMarketPanel(items,listId,statusId){
+ const list=$(listId),status=$(statusId);
+ if(!list||!status)return;
+ status.textContent='Aggiornamento dati di mercato…';
+ const results=await Promise.all(items.map(async item=>{
+  try{return {item,data:await api('/api/quote/'+encodeURIComponent(item.ticker))}}
+  catch(e){return {item,data:null}}
+ }));
+ list.innerHTML=results.map(x=>{
+  if(!x.data)return '<article class="holding"><b>'+safe(x.item.name)+'</b><small>Quotazione non disponibile</small></article>';
+  return '<article class="holding"><div class="holding-info"><b>'+safe(x.item.name)+'</b><small>'+safe(x.item.ticker)+' · '+Number(x.data.price).toLocaleString('it-IT')+' '+safe(x.data.currency||'')+' · '+safe(x.item.unit||'')+'</small><small>'+safe(x.data.asOf||'Data non indicata')+'</small></div></article>';
+ }).join('');
+ const ok=results.filter(x=>x.data).length;
+ status.textContent='Quotazioni ricevute: '+ok+'/'+items.length+'. Fonte Yahoo Finance; possibili ritardi.';
+}
+
+async function loadCentralBankRates(){
+ const list=$('#centralBankList');
+ const status=$('#ratesUpdated');
+ if(!list||!status)return;
+ status.textContent='Lettura dei dati ufficiali BCE…';
+ const series=[
+ ['B.U2.EUR.4F.KR.MRR_FR.LEV','BCE · Rifinanziamento'],
+ ['D.U2.EUR.4F.KR.DFR.LEV','BCE · Depositi'],
+ ['D.U2.EUR.4F.KR.MLFR.LEV','BCE · Prestito marginale']
+ ];
+ const results=await Promise.all(series.map(async s=>{
+  try{
+   const r=await fetch('https://data-api.ecb.europa.eu/service/data/FM/'+s[0]+'?format=csvdata&lastNObservations=1');
+   if(!r.ok)throw Error();
+   const rows=(await r.text()).trim().split(/\r?\n/);
+   const h=rows[0].split(',');
+   const v=rows[rows.length-1].split(',');
+   return {name:s[1],value:Number(v[h.indexOf('OBS_VALUE')]),date:v[h.indexOf('TIME_PERIOD')]};
+  }catch(e){return null}
+ }));
+ const valid=results.filter(x=>x&&Number.isFinite(x.value));
+ list.innerHTML=valid.length?valid.map(x=>'<article class="holding"><div class="holding-info"><b>'+safe(x.name)+'</b><small>'+x.value.toLocaleString('it-IT')+'% · '+safe(x.date)+'</small></div></article>').join(''):'<p class="hint">Dati BCE momentaneamente non disponibili.</p>';
+ status.textContent='Fonte ufficiale: Banca Centrale Europea. Ultime osservazioni disponibili.';
+}
+
+async function refreshMarkets(){
+ const b=$('#refreshMarkets');
+ if(b){b.disabled=true;b.textContent='Aggiornamento…'}
+ try{
+  await Promise.all([
+   loadMarketPanel(commodityAssets,'#commodityList','#commodityUpdated'),
+   loadCentralBankRates(),
+   loadMarketPanel(topPlayers,'#techList','#techUpdated')
+  ]);
+ }finally{
+  if(b){b.disabled=false;b.textContent='↻ Aggiorna mercati'}
+ }
+}
+
+$('#refreshMarkets')?.addEventListener('click',refreshMarkets);
+refreshMarkets();
 $('#refreshPrices').addEventListener('click',refreshPrices);
 $('#runAI').addEventListener('click',async()=>{const box=$('#aiResult');box.innerHTML='<b>Analisi in corso…</b><p>Invio al motore AI configurato sul server.</p>';try{const r=await fetch('https://pikkio6-api.onrender.com/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({holdings,articles:newsItems})}),d=await r.json();if(!r.ok)throw Error(d.error||'Servizio AI non disponibile');box.innerHTML=`<b>Analisi AI · ${safe(d.model||'')}</b><p style="white-space:pre-wrap">${safe(d.analysis||'Nessun risultato')}</p><p>Analisi informativa generata il ${safe(d.createdAt||'')}. Verifica le fonti e non usarla come ordine di investimento.</p>`}catch(e){box.innerHTML=`<b>Analisi AI non disponibile</b><p>${safe(e.message)}. Configura OPENAI_API_KEY sul server e riprova.</p>`}});
 try{const saved=JSON.parse(localStorage.getItem(KEY)||'[]');holdings=Array.isArray(saved)?saved.filter(h=>h&&typeof h.ticker==='string'&&Number(h.quantity)>0&&Number(h.price)>=0).map(h=>({...h,quantity:Number(h.quantity),price:Number(h.price)})):[]}catch{holdings=[]}render();loadNews();if(holdings.length)refreshPrices();
