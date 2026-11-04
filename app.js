@@ -1,6 +1,6 @@
 'use strict';
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
-let holdings=[],newsItems=[],quotes={},fx={}; const KEY='pikkio.holdings.v2';
+let holdings=[],newsItems=[],quotes={},fx={},activeNewsFilter='all'; const KEY='pikkio.holdings.v2';
 const euro=n=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(Number.isFinite(Number(n))?Number(n):0);
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(m){const t=$('#toast');if(!t)return;t.textContent=m;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),2600)}
@@ -44,7 +44,15 @@ function renderNews(){
   }
 
   el.innerHTML=filtered.map(n=>`<article class="event"><div class="event-symbol">◉</div><div><span class="event-type">${safe(n.domain||'FONTE WEB')} · ${safe(n.seen||'')}</span><h3>${safe(n.title)}</h3><p>${safe(n.sourceCountry||'Notizia internazionale')}</p><a href="${safe(n.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold);font-size:12px">Apri fonte ↗</a></div></article>`).join('');
-} {const el=$('#newsList');if(!newsItems.length){el.innerHTML='<p class="hint">Nessuna notizia disponibile. Riprova più tardi.</p>';return}el.innerHTML=newsItems.map(n=>`<article class="event"><div class="event-symbol">◉</div><div><span class="event-type">${safe(n.domain||'FONTE WEB')} · ${safe(n.seen||'')}</span><h3>${safe(n.title)}</h3><p>${safe(n.sourceCountry||'Notizia internazionale')}</p><a href="${safe(n.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold);font-size:12px">Apri fonte ↗</a></div></article>`).join('')}
+$$('.news-filters [data-news-filter]').forEach(button=>{
+  button.addEventListener('click',()=>{
+    activeNewsFilter=button.dataset.newsFilter;
+    $$('.news-filters [data-news-filter]').forEach(item=>{
+      item.setAttribute('aria-pressed',String(item===button));
+    });
+    renderNews();
+  });
+});
 function renderSignals(){const el=$('#signalList');if(!el)return;const matched=[];for(const n of newsItems){const text=(n.title+' '+(n.domain||'')).toLowerCase();for(const h of holdings){const ticker=h.ticker.toLowerCase(),name=(h.name||'').toLowerCase();if(text.includes(ticker)||(name.length>4&&text.includes(name))){matched.push({h,n,why:'Corrispondenza testuale'});continue}const sectors={energia:['oil','energy','gas','electricity','solar','wind','petrol','energia'],banche:['bank','rate','central bank','fed','ecb','bce','interest'],tecnologia:['artificial intelligence','chip','semiconductor','technology','ai','software'],geopolitica:['war','sanction','tariff','conflict','election','trade']};const sector=Object.entries(sectors).find(([k,words])=>words.some(w=>text.includes(w))&&((k==='energia'&&/en|oil|gas|renew|solar|petro/i.test(h.name+' '+ticker))||(k==='tecnologia'&&/tech|semi|chip|soft|ai|nvda|msft|goog/i.test(h.name+' '+ticker))||(k==='banche'&&/bank|fin|credit|visa|jpm/i.test(h.name+' '+ticker))||k==='geopolitica'));if(sector)matched.push({h,n,why:`Possibile collegamento settoriale: ${sector[0]}`})}}const unique=[...new Map(matched.map(x=>[x.h.ticker+'|'+x.n.url,x])).values()].slice(0,12);el.innerHTML=unique.length?unique.map(x=>`<article class="signal-example"><span class="signal-label risk">DA APPROFONDIRE · NON OPERATIVO</span><h3>${safe(x.h.name)} (${safe(x.h.ticker)})</h3><p>${safe(x.n.title)}</p><p>${safe(x.why)}. Corrispondenza automatica preliminare, non prova di impatto economico e non indicazione di acquisto/vendita.</p><a href="${safe(x.n.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold);font-size:12px">Verifica la notizia ↗</a></article>`).join(''):'<p class="hint">Nessuna corrispondenza rilevata. Questo non significa assenza di rischio.</p>'}
 async function loadNews(){try{const d=await api('/api/news');newsItems=Array.isArray(d.articles)?d.articles:[];renderNews();renderSignals();$('#newsStatus').textContent=`${newsItems.length} NOTIZIE CARICATE`;$('#connectionStatus').textContent='BACKEND COLLEGATO'}catch(e){$('#newsList').innerHTML='<p class="hint">Feed non disponibile: controlla la connessione e il server.</p>';$('#newsStatus').textContent='FONTE NON DISPONIBILE';$('#connectionStatus').textContent='BACKEND NON COLLEGATO'}}
 $('#refreshPrices').addEventListener('click',refreshPrices);
