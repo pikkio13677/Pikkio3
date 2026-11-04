@@ -44,7 +44,7 @@ function renderNews(){
   }
 
   el.innerHTML=filtered.map(n=>`<article class="event"><div class="event-symbol">◉</div><div><span class="event-type">${safe(n.domain||'FONTE WEB')} · ${safe(n.seen||'')}</span><h3>${safe(n.title)}</h3><p>${safe(n.sourceCountry||'Notizia internazionale')}</p><a href="${safe(n.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold);font-size:12px">Apri fonte ↗</a></div></article>`).join('');
-$$('.news-filters [data-news-filter]').forEach(button=>{
+}$$('.news-filters [data-news-filter]').forEach(button=>{
   button.addEventListener('click',()=>{
     activeNewsFilter=button.dataset.newsFilter;
     $$('.news-filters [data-news-filter]').forEach(item=>{
