@@ -73,10 +73,50 @@
   <button class="secondary" type="button" data-news-filter="ai" aria-pressed="false">INTELLIGENZA ARTIFICIALE</button>
 </div>
 <div id="newsList" class="holding-list" aria-live="polite"></div>
-    <div class="event"><div class="event-symbol">⚡</div><div><span class="event-type">ENERGIA E MATERIE PRIME</span><h3>Prezzi e approvvigionamenti</h3><p>Shock energetici o scarsità di materie prime possono influenzare produttori, trasporti e industria.</p><span class="impact">Monitoraggio</span></div></div>
-    <div class="event"><div class="event-symbol">⌂</div><div><span class="event-type">BANCHE CENTRALI</span><h3>Tassi e politica monetaria</h3><p>Le decisioni sui tassi possono incidere su banche, obbligazioni e società in crescita.</p><span class="impact">Impatto potenziale</span></div></div>
-    <div class="event"><div class="event-symbol">⌘</div><div><span class="event-type">TECNOLOGIA E AI</span><h3>Innovazione e regolamentazione</h3><p>Nuovi investimenti, concorrenza e regole possono cambiare le prospettive del settore.</p><span class="impact">Opportunità / rischio</span></div></div>
-    <div class="event"><div class="event-symbol">◉</div><div><span class="event-type">GEOPOLITICA</span><h3>Conflitti, dazi e commercio</h3><p>Le tensioni internazionali possono alterare catene di fornitura, valute e prezzi delle materie prime.</p><span class="impact">Monitoraggio</span></div></div>
+    
+    <div class="event">
+  <div class="event-symbol">⚡</div>
+  <div>
+    <span class="event-type">ENERGIA E MATERIE PRIME</span>
+    <h3>Quotazioni aggiornate</h3>
+    <p id="commodityUpdated">In attesa dei dati di mercato.</p>
+    <div id="commodityList" class="market-grid"></div>
+    <button class="secondary" id="refreshMarkets" type="button">↻ Aggiorna mercati</button>
+  </div>
+</div>
+
+<div class="event">
+  <div class="event-symbol">⌂</div>
+  <div>
+    <span class="event-type">BANCHE CENTRALI</span>
+    <h3>Tassi ufficiali</h3>
+    <p id="ratesUpdated">In attesa dei dati ufficiali.</p>
+    <div id="centralBankList" class="market-grid"></div>
+  </div>
+</div>
+
+<div class="event">
+  <div class="event-symbol">⌘</div>
+  <div>
+    <span class="event-type">TECNOLOGIA E AI</span>
+    <h3>Quotazioni tecnologiche</h3>
+    <p id="techUpdated">In attesa delle quotazioni.</p>
+    <div id="techList" class="market-grid"></div>
+  </div>
+</div>
+
+<div class="event">
+  <div class="event-symbol">◉</div>
+  <div>
+    <span class="event-type">GEOPOLITICA</span>
+    <h3>Eventi e impatto sui mercati</h3>
+    <div id="geoList" class="holding-list">
+      <p>In attesa delle notizie internazionali.</p>
+    </div>
+  </div>
+</div>
+    
+    
   </section>
   <section id="signals" class="view">
     <div class="section-head"><div><p class="eyebrow">PERSONAL ALERTS</p><h2>Segnali PIKKIO</h2></div></div>
