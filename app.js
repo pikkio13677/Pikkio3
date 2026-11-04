@@ -19,7 +19,32 @@ $('#csvFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!
 $('#exportCSV').addEventListener('click',()=>{const rows=[['ticker','nome','quantita','prezzo_medio'],...holdings.map(h=>[h.ticker,h.name,h.quantity,h.price])];const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='pikkio-portafoglio.csv';a.click();URL.revokeObjectURL(url);toast('Backup CSV creato')});
 async function api(path){const r=await fetch('https://pikkio6-api.onrender.com'+path);const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||`Servizio non disponibile (${r.status})`);return d}
 async function refreshPrices(){if(!holdings.length){$('#quoteStatus').textContent='Aggiungi titoli per cercare le quotazioni.';return}$('#quoteStatus').textContent='Aggiornamento quotazioni e cambi…';let ok=0;for(const h of holdings){try{const d=await api('/api/quote/'+encodeURIComponent(h.ticker));if(Number.isFinite(Number(d.price))&&Number(d.price)>0){quotes[h.ticker]=d;ok++}}catch(e){}}const currencies=[...new Set(Object.values(quotes).map(q=>q.currency).filter(c=>c&&c!=='EUR'))];for(const c of currencies){try{const d=await api('/api/fx/'+encodeURIComponent(c));if(Number.isFinite(Number(d.rate)))fx[c]=Number(d.rate)}catch(e){}}render();const unknownCurrency=holdings.some(h=>quotes[h.ticker]&&!quotes[h.ticker].currency);$('#quoteStatus').textContent=`Quotazioni ricevute: ${ok}/${holdings.length}. Prezzi potenzialmente ritardati; cambi BCE/Frankfurter.${unknownCurrency?' Attenzione: valuta non riconosciuta per almeno un ticker; valore di mercato non convertito.':''} ${ok?'':'Verifica ticker e configurazione provider.'}`}
-function renderNews(){const el=$('#newsList');if(!newsItems.length){el.innerHTML='<p class="hint">Nessuna notizia disponibile. Riprova più tardi.</p>';return}el.innerHTML=newsItems.map(n=>`<article class="event"><div class="event-symbol">◉</div><div><span class="event-type">${safe(n.domain||'FONTE WEB')} · ${safe(n.seen||'')}</span><h3>${safe(n.title)}</h3><p>${safe(n.sourceCountry||'Notizia internazionale')}</p><a href="${safe(n.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold);font-size:12px">Apri fonte ↗</a></div></article>`).join('')}
+function renderNews(){
+  const el=$('#newsList');
+  if(!newsItems.length){
+    el.innerHTML='<p class="hint">Nessuna notizia disponibile. Riprova più tardi.</p>';
+    return;
+  }
+
+  const terms={
+    ai:/\b(ai|artificial intelligence|machine learning|deep learning|generative ai|llm|chatgpt|openai|gemini|claude)\b|intelligenza artificiale/i,
+    technology:/\b(technology|tech|tecnologia|semiconductor|chip|software|hardware|cybersecurity|robotics|smartphone|computer|cloud computing)\b/i
+  };
+
+  const filtered=newsItems.filter(n=>{
+    const text=[n.title,n.domain,n.sourceCountry,n.description,n.summary].filter(Boolean).join(' ');
+    if(activeNewsFilter==='ai') return terms.ai.test(text);
+    if(activeNewsFilter==='technology') return terms.technology.test(text);
+    return true;
+  });
+
+  if(!filtered.length){
+    el.innerHTML='<p class="hint">Nessuna notizia trovata per questo filtro.</p>';
+    return;
+  }
+
+  el.innerHTML=filtered.map(n=>`<article class="event"><div class="event-symbol">◉</div><div><span class="event-type">${safe(n.domain||'FONTE WEB')} · ${safe(n.seen||'')}</span><h3>${safe(n.title)}</h3><p>${safe(n.sourceCountry||'Notizia internazionale')}</p><a href="${safe(n.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold);font-size:12px">Apri fonte ↗</a></div></article>`).join('');
+} {const el=$('#newsList');if(!newsItems.length){el.innerHTML='<p class="hint">Nessuna notizia disponibile. Riprova più tardi.</p>';return}el.innerHTML=newsItems.map(n=>`<article class="event"><div class="event-symbol">◉</div><div><span class="event-type">${safe(n.domain||'FONTE WEB')} · ${safe(n.seen||'')}</span><h3>${safe(n.title)}</h3><p>${safe(n.sourceCountry||'Notizia internazionale')}</p><a href="${safe(n.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold);font-size:12px">Apri fonte ↗</a></div></article>`).join('')}
 function renderSignals(){const el=$('#signalList');if(!el)return;const matched=[];for(const n of newsItems){const text=(n.title+' '+(n.domain||'')).toLowerCase();for(const h of holdings){const ticker=h.ticker.toLowerCase(),name=(h.name||'').toLowerCase();if(text.includes(ticker)||(name.length>4&&text.includes(name))){matched.push({h,n,why:'Corrispondenza testuale'});continue}const sectors={energia:['oil','energy','gas','electricity','solar','wind','petrol','energia'],banche:['bank','rate','central bank','fed','ecb','bce','interest'],tecnologia:['artificial intelligence','chip','semiconductor','technology','ai','software'],geopolitica:['war','sanction','tariff','conflict','election','trade']};const sector=Object.entries(sectors).find(([k,words])=>words.some(w=>text.includes(w))&&((k==='energia'&&/en|oil|gas|renew|solar|petro/i.test(h.name+' '+ticker))||(k==='tecnologia'&&/tech|semi|chip|soft|ai|nvda|msft|goog/i.test(h.name+' '+ticker))||(k==='banche'&&/bank|fin|credit|visa|jpm/i.test(h.name+' '+ticker))||k==='geopolitica'));if(sector)matched.push({h,n,why:`Possibile collegamento settoriale: ${sector[0]}`})}}const unique=[...new Map(matched.map(x=>[x.h.ticker+'|'+x.n.url,x])).values()].slice(0,12);el.innerHTML=unique.length?unique.map(x=>`<article class="signal-example"><span class="signal-label risk">DA APPROFONDIRE · NON OPERATIVO</span><h3>${safe(x.h.name)} (${safe(x.h.ticker)})</h3><p>${safe(x.n.title)}</p><p>${safe(x.why)}. Corrispondenza automatica preliminare, non prova di impatto economico e non indicazione di acquisto/vendita.</p><a href="${safe(x.n.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--gold);font-size:12px">Verifica la notizia ↗</a></article>`).join(''):'<p class="hint">Nessuna corrispondenza rilevata. Questo non significa assenza di rischio.</p>'}
 async function loadNews(){try{const d=await api('/api/news');newsItems=Array.isArray(d.articles)?d.articles:[];renderNews();renderSignals();$('#newsStatus').textContent=`${newsItems.length} NOTIZIE CARICATE`;$('#connectionStatus').textContent='BACKEND COLLEGATO'}catch(e){$('#newsList').innerHTML='<p class="hint">Feed non disponibile: controlla la connessione e il server.</p>';$('#newsStatus').textContent='FONTE NON DISPONIBILE';$('#connectionStatus').textContent='BACKEND NON COLLEGATO'}}
 $('#refreshPrices').addEventListener('click',refreshPrices);
