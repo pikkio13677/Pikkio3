@@ -70,7 +70,7 @@ app.get('/api/news', async (_req,res) => {
 
 app.get('/api/quote/:ticker', async (req,res) => {
   const ticker=String(req.params.ticker||'').toUpperCase();
-  if (!/^[A-Z0-9.^_-]{1,20}$/.test(ticker)) return res.status(400).json({error:'Ticker non valido'});
+ if (!/^[A-Z0-9.^_=-]{1,20}$/.test(ticker)) return res.status(400).json({error:'Ticker non valido'}); 
   try {
     const url=`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=1d&interval=1d`;
     const r=await fetch(url,{headers:{'User-Agent':'Mozilla/5.0 PIKKIO/1.0'}});
