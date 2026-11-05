@@ -1,9 +1,19 @@
+
+
+
 {
   "name": "pikkio5",
   "version": "5.0.0",
   "private": true,
   "description": "PIKKIO Global Investment Radar",
-  "scripts": { "start": "node server.js" },
-  "dependencies": { "express": "^4.21.2" },
-  "engines": { "node": ">=18" }
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "firebase-admin": "^13.10.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }
