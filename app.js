@@ -4,7 +4,17 @@ let holdings=[],newsItems=[],quotes={},fx={},activeNewsFilter='all'; const KEY='
 const euro=n=>new Intl.NumberFormat('it-IT',{style:'currency',currency:'EUR'}).format(Number.isFinite(Number(n))?Number(n):0);
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function toast(m){const t=$('#toast');if(!t)return;t.textContent=m;t.classList.add('show');clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.classList.remove('show'),2600)}
-function persist(){try{localStorage.setItem(KEY,JSON.stringify(holdings));render()}catch(e){toast('Memoria piena: esporta un backup CSV')}}
+function persist(){
+  try{
+    localStorage.setItem(KEY,JSON.stringify(holdings));
+    render();
+    if(window.pikkioCloudReady && typeof syncPortfolioCloud==='function'){
+      syncPortfolioCloud();
+    }
+  }catch(e){
+    toast('Memoria piena: esporta un backup CSV');
+  }
+}
 function quoteInEUR(h){const q=quotes[h.ticker];if(!q||!Number.isFinite(Number(q.price)))return null;const rate=q.currency==='EUR'?1:fx[q.currency];return Number.isFinite(rate)?Number(q.price)*rate:null}
 function holdingMarkup(h,i){const current=quoteInEUR(h),cost=h.quantity*h.price,pnl=current===null?null:(current-h.price)*h.quantity,pct=cost>0&&pnl!==null?pnl/cost*100:null;return `<article class="holding"><div class="ticker-icon">${safe(h.ticker.slice(0,3))}</div><div class="holding-info"><b>${safe(h.name||h.ticker)}</b><small>${safe(h.ticker)} · ${h.quantity} quote · carico ${euro(cost)}${current===null?'':' · mercato '+euro(current*h.quantity)}</small>${pnl===null?'':`<small style="display:block;color:${pnl>=0?'#7fc9a0':'#e39a8b'}">${pnl>=0?'+':''}${euro(pnl)} (${pct>=0?'+':''}${pct.toFixed(2)}%) · ${safe(qDate(h.ticker))}</small>`}</div><div class="holding-value">${euro(cost)}<small style="display:block;color:var(--muted);font-weight:400">carico</small></div><button class="delete" data-edit="${i}" aria-label="Modifica ${safe(h.ticker)}" title="Modifica">✎</button><button class="delete" data-delete="${i}" aria-label="Elimina ${safe(h.ticker)}" title="Elimina">×</button></article>`}
 function qDate(t){const q=quotes[t];return q?`${q.currency||''} · ${q.asOf||'data non indicata'}`:''}
@@ -17,6 +27,38 @@ $('#holdingForm').addEventListener('submit',e=>{if(e.submitter?.value==='cancel'
 function parseCSV(text){const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(x=>x.trim());if(lines.length<2)throw Error('Il CSV non contiene righe dati');const delim=(lines[0].match(/;/g)||[]).length>(lines[0].match(/,/g)||[]).length?';':',';const parseLine=line=>{let out=[],v='',q=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'&&line[i+1]==='"'&&q){v+='"';i++}else if(c==='"')q=!q;else if(c===delim&&!q){out.push(v.trim());v=''}else v+=c}if(q)throw Error('Virgolette non chiuse nel CSV');out.push(v.trim());return out};const header=parseLine(lines[0]).map(x=>x.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,''));const idx={ticker:header.indexOf('ticker'),name:header.indexOf('nome'),quantity:header.indexOf('quantita'),price:header.indexOf('prezzo_medio')};if(Object.values(idx).some(v=>v<0))throw Error('Intestazioni richieste: ticker,nome,quantita,prezzo_medio');const out=[];for(const line of lines.slice(1)){const r=parseLine(line);if(r.length<=Math.max(...Object.values(idx)))continue;const h={ticker:String(r[idx.ticker]||'').trim().toUpperCase(),name:String(r[idx.name]||'').trim(),quantity:Number(String(r[idx.quantity]).replace(',','.')),price:Number(String(r[idx.price]).replace(',','.'))};if(!/^[A-Z0-9.^_-]{1,20}$/.test(h.ticker)||!Number.isFinite(h.quantity)||h.quantity<=0||!Number.isFinite(h.price)||h.price<0)continue;h.name=h.name||h.ticker;out.push(h)}return out}
 $('#csvFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const a=parseCSV(await f.text());if(!a.length)throw Error('Nessuna riga valida');holdings.push(...a);persist();toast(`Importati ${a.length} titoli`);refreshPrices()}catch(x){toast(x.message||'Errore CSV')}e.target.value=''});
 $('#exportCSV').addEventListener('click',()=>{const rows=[['ticker','nome','quantita','prezzo_medio'],...holdings.map(h=>[h.ticker,h.name,h.quantity,h.price])];const csv=rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='pikkio-portafoglio.csv';a.click();URL.revokeObjectURL(url);toast('Backup CSV creato')});
+let cloudSaveRunning=false,cloudSaveQueued=false;
+
+async function syncPortfolioCloud(){
+  if(cloudSaveRunning){
+    cloudSaveQueued=true;
+    return;
+  }
+  cloudSaveRunning=true;
+  try{
+    do{
+      cloudSaveQueued=false;
+      const user=await window.pikkioAuthReady;
+      if(!user)throw new Error('Accesso Firebase non riuscito');
+      const token=await user.getIdToken();
+      const r=await fetch('https://pikkio6-api.onrender.com/api/portfolio',{
+        method:'PUT',
+        headers:{
+          'Content-Type':'application/json',
+          'Authorization':'Bearer '+token
+        },
+        body:JSON.stringify({holdings})
+      });
+      const d=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(d.error||'Errore salvataggio cloud');
+    }while(cloudSaveQueued);
+  }catch(e){
+    console.error('PIKKIO cloud:',e);
+    toast('Salvataggio cloud non riuscito');
+  }finally{
+    cloudSaveRunning=false;
+  }
+}
 async function api(path){const r=await fetch('https://pikkio6-api.onrender.com'+path);const d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||`Servizio non disponibile (${r.status})`);return d}
 async function refreshPrices(){if(!holdings.length){$('#quoteStatus').textContent='Aggiungi titoli per cercare le quotazioni.';return}$('#quoteStatus').textContent='Aggiornamento quotazioni e cambi…';let ok=0;for(const h of holdings){try{const d=await api('/api/quote/'+encodeURIComponent(h.ticker));if(Number.isFinite(Number(d.price))&&Number(d.price)>0){quotes[h.ticker]=d;ok++}}catch(e){}}const currencies=[...new Set(Object.values(quotes).map(q=>q.currency).filter(c=>c&&c!=='EUR'))];for(const c of currencies){try{const d=await api('/api/fx/'+encodeURIComponent(c));if(Number.isFinite(Number(d.rate)))fx[c]=Number(d.rate)}catch(e){}}render();const unknownCurrency=holdings.some(h=>quotes[h.ticker]&&!quotes[h.ticker].currency);$('#quoteStatus').textContent=`Quotazioni ricevute: ${ok}/${holdings.length}. Prezzi potenzialmente ritardati; cambi BCE/Frankfurter.${unknownCurrency?' Attenzione: valuta non riconosciuta per almeno un ticker; valore di mercato non convertito.':''} ${ok?'':'Verifica ticker e configurazione provider.'}`}
 function renderNews(){
@@ -170,5 +212,55 @@ setInterval(() => {
 }, 10 * 60 * 1000);
 $('#refreshPrices').addEventListener('click',refreshPrices);
 $('#runAI').addEventListener('click',async()=>{const box=$('#aiResult');box.innerHTML='<b>Analisi in corso…</b><p>Invio al motore AI configurato sul server.</p>';try{const r=await fetch('https://pikkio6-api.onrender.com/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({holdings,articles:newsItems})}),d=await r.json();if(!r.ok)throw Error(d.error||'Servizio AI non disponibile');box.innerHTML=`<b>Analisi AI · ${safe(d.model||'')}</b><p style="white-space:pre-wrap">${safe(d.analysis||'Nessun risultato')}</p><p>Analisi informativa generata il ${safe(d.createdAt||'')}. Verifica le fonti e non usarla come ordine di investimento.</p>`}catch(e){box.innerHTML=`<b>Analisi AI non disponibile</b><p>${safe(e.message)}. Configura OPENAI_API_KEY sul server e riprova.</p>`}});
-try{const saved=JSON.parse(localStorage.getItem(KEY)||'[]');holdings=Array.isArray(saved)?saved.filter(h=>h&&typeof h.ticker==='string'&&Number(h.quantity)>0&&Number(h.price)>=0).map(h=>({...h,quantity:Number(h.quantity),price:Number(h.price)})):[]}catch{holdings=[]}render();loadNews();if(holdings.length)refreshPrices();
+try{
+  const saved=JSON.parse(localStorage.getItem(KEY)||'[]');
+  holdings=Array.isArray(saved)?saved.filter(h=>h&&typeof h.ticker==='string'&&Number(h.quantity)>0&&Number(h.price)>=0).map(h=>({...h,quantity:Number(h.quantity),price:Number(h.price)})):[];
+}catch{
+  holdings=[];
+}
+render();
+loadNews();
+if(holdings.length)refreshPrices();
+
+async function initializePortfolioCloud(){
+  try{
+    const user=await window.pikkioAuthReady;
+    if(!user)throw new Error('Autenticazione Firebase non riuscita');
+
+    const token=await user.getIdToken();
+    const r=await fetch('https://pikkio6-api.onrender.com/api/portfolio',{
+      headers:{'Authorization':'Bearer '+token}
+    });
+    const d=await r.json();
+    if(!r.ok)throw new Error(d.error||'Errore lettura cloud');
+
+    const remote=Array.isArray(d.holdings)?d.holdings.filter(h=>h&&typeof h.ticker==='string'&&Number(h.quantity)>0&&Number(h.price)>=0):[];
+    const merged=[...holdings];
+    const seen=new Set(merged.map(h=>h.ticker.toUpperCase()));
+
+    remote.forEach(h=>{
+      const ticker=h.ticker.toUpperCase();
+      if(!seen.has(ticker)){
+        merged.push(h);
+        seen.add(ticker);
+      }
+    });
+
+    holdings=merged;
+    localStorage.setItem(KEY,JSON.stringify(holdings));
+    render();
+    window.pikkioCloudReady=true;
+
+    if(JSON.stringify(merged)!==JSON.stringify(remote)){
+      await syncPortfolioCloud();
+    }
+    if(holdings.length)refreshPrices();
+    toast('Portafoglio sincronizzato');
+  }catch(e){
+    console.error('PIKKIO cloud:',e);
+    toast('Cloud non disponibile: dati locali conservati');
+  }
+}
+
+initializePortfolioCloud();;
 let deferredPrompt;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('#installBtn').hidden=false});$('#installBtn').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;$('#installBtn').hidden=true});if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
