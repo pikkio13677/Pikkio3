@@ -22,10 +22,13 @@ app.disable('x-powered-by');
 app.use(express.json({ limit: '1mb' }));
 
 app.use((req, res, next) => {
-  
-     res.setHeader('Vary', 'Origin');
-    res.setHeader('Access-Control-Allow-Methods', ');'GET,POST,PUT,OPTIONS'
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Accept,Authorization'
+  const origin = req.headers.origin;
+
+  if (origin === 'https://pikkio13677.github.io') {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Accept,Authorization');
   }
 
   if (req.method === 'OPTIONS') {
@@ -36,28 +39,6 @@ app.use((req, res, next) => {
 
   next();
 });
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-
-  if (origin === 'https://pikkio13677.github.io') {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-    res.setHeader('Access-Control-Allow-Methods', ');'GET,POST,PUT,OPTIONS'
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Accept,Authorization')'
-  }
-
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(
-      origin === 'https://pikkio13677.github.io' ? 204 : 403
-    );
-  }
-
-  next();
-}); origin = req.headers.origin;
-
-  if (origin === 'https://pikkio13677.github.io') {
-    res.setHeader('Access-Control-Allow-Origin', origin);
- 
 function xmlText(s='') {
   return s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1')
     .replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'")
