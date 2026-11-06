@@ -27,8 +27,8 @@ app.use((req, res, next) => {
   if (origin === 'https://pikkio13677.github.io') {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Accept');
+    res.setHeader('Access-Control-Allow-Methods', ');'GET,POST,PUT,OPTIONS'
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Accept,Authorization'
   }
 
   if (req.method === 'OPTIONS') {
@@ -45,8 +45,8 @@ app.use((req, res, next) => {
   if (origin === 'https://pikkio13677.github.io') {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Vary', 'Origin');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Accept');
+    res.setHeader('Access-Control-Allow-Methods', ');'GET,POST,PUT,OPTIONS'
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Accept,Authorization')'
   }
 
   if (req.method === 'OPTIONS') {
@@ -68,7 +68,100 @@ function tag(block, name) {
   return (block.match(re)||[])[1] || '';
 }
 app.get('/api/health', (_req,res)=>res.json({ok:true,service:'PIKKIO',time:new Date().toISOString()}));
+async function requireFirebaseAuth(req, res, next) {
+  if (!db) {
+    return res.status(503).json({
+      error: 'Firebase non disponibile sul server'
+    });
+  }
 
+  const header = req.get('authorization') || '';
+  const match = header.match(/^Bearer\s+(.+)$/i);
+
+  if (!match) {
+    return res.status(401).json({
+      error: 'Autenticazione richiesta'
+    });
+  }
+
+  try {
+    const decoded = await admin.auth().verifyIdToken(match[1]);
+    req.firebaseUid = decoded.uid;
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      error: 'Token Firebase non valido o scaduto'
+    });
+  }
+}
+app.get('/api/portfolio', requireFirebaseAuth, async (req, res) => {
+  try {
+    const ref = db.collection('users')
+      .doc(req.firebaseUid)
+      .collection('portfolio')
+      .doc('current');
+
+    const snapshot = await ref.get();
+    const data = snapshot.exists ? snapshot.data() : {};
+
+    res.json({
+      holdings: Array.isArray(data.holdings) ? data.holdings : [],
+      updatedAt: data.updatedAt?.toDate?.().toISOString() || null
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Impossibile leggere il portafoglio'
+    });
+  }
+})}
+app.put('/api/portfolio', requireFirebaseAuth, async (req, res) => {
+  const input = req.body?.holdings;
+
+  if (!Array.isArray(input) || input.length > 100) {
+    return res.status(400).json({
+      error: 'Portafoglio non valido: massimo 100 titoli'
+    });
+  }
+
+  const holdings = [];
+
+  for (const item of input) {
+    const ticker = String(item?.ticker || '').trim().toUpperCase();
+    const name = String(item?.name || ticker).trim().slice(0, 80);
+    const quantity = Number(item?.quantity);
+    const price = Number(item?.price);
+
+    if (
+      !/^[A-Z0-9.^_=-]{1,20}$/.test(ticker) ||
+      !Number.isFinite(quantity) || quantity <= 0 ||
+      !Number.isFinite(price) || price < 0
+    ) {
+      return res.status(400).json({
+        error: 'Dati dei titoli non validi'
+      });
+    }
+
+    holdings.push({ ticker, name, quantity, price });
+  }
+
+  try {
+    const ref = db.collection('users')
+      .doc(req.firebaseUid)
+      .collection('portfolio')
+      .doc('current');
+
+    await ref.set({
+      holdings,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    res.json({ ok: true, count: holdings.length });
+  } catch (error) {
+    res.status(500).json({
+      error: 'Impossibile salvare il portafoglio'
+    });
+  }
+});
 app.get('/api/news', async (_req,res) => {
   try {
     const response = await fetch('https://news.google.com/rss?hl=it&gl=IT&ceid=IT:it', {headers:{'User-Agent':'PIKKIO-Radar/1.0'}});
