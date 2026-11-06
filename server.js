@@ -190,7 +190,7 @@ app.post('/api/analyze', async (req,res) => {
     return res.status(503).json({error:'GEMINI_API_KEY non configurata sul server'});
   }
 
-  const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash;
+  const model = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
   const holdings = Array.isArray(req.body?.holdings) ? req.body.holdings.slice(0,50) : [];
   const articles = Array.isArray(req.body?.articles) ? req.body.articles.slice(0,30) : [];
   const input = JSON.stringify({
