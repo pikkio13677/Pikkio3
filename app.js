@@ -124,6 +124,7 @@ const commodityAssets=[
 {name:'Petrolio WTI',ticker:'CL=F',unit:'USD/barile'},
 {name:'Petrolio Brent',ticker:'BZ=F',unit:'USD/barile'},
 {name:'Gas naturale',ticker:'NG=F',unit:'USD/MMBtu'},
+  {name:'Gas naturale europeo TTF',ticker:'TTF=F',unit:'EUR/MWh'},
 {name:'Oro',ticker:'GC=F',unit:'USD/oncia'},
 {name:'Argento',ticker:'SI=F',unit:'USD/oncia'},
 {name:'Rame',ticker:'HG=F',unit:'USD/libbra'},
@@ -135,7 +136,16 @@ const commodityAssets=[
 {name:'Caffè',ticker:'KC=F',unit:'USD/libbra'},
 {name:'Zucchero',ticker:'SB=F',unit:'USD/libbra'}
 ];
-
+const cryptoAssets=[
+{name:'Bitcoin',ticker:'BTC-USD',unit:'USD'},
+{name:'Ethereum',ticker:'ETH-USD',unit:'USD'},
+{name:'BNB',ticker:'BNB-USD',unit:'USD'},
+{name:'XRP',ticker:'XRP-USD',unit:'USD'},
+{name:'Solana',ticker:'SOL-USD',unit:'USD'},
+{name:'Dogecoin',ticker:'DOGE-USD',unit:'USD'},
+{name:'Cardano',ticker:'ADA-USD',unit:'USD'},
+{name:'TRON',ticker:'TRX-USD',unit:'USD'}
+];
 const topPlayers=[
 {name:'NVIDIA',ticker:'NVDA'},
 {name:'Microsoft',ticker:'MSFT'},
@@ -194,6 +204,7 @@ async function refreshMarkets(){
  try{
   await Promise.all([
    loadMarketPanel(commodityAssets,'#commodityList','#commodityUpdated'),
+    loadMarketPanel(cryptoAssets,'#cryptoList','#cryptoUpdated'),
    loadCentralBankRates(),
    loadMarketPanel(topPlayers,'#techList','#techUpdated')
   ]);
