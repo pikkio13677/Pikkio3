@@ -248,7 +248,7 @@ app.post('/api/analyze', async (req,res) => {
     res.status(502).json({error:e.message});
   }
 });
-});
+
 
 
   
