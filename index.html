@@ -132,5 +132,28 @@
 <div class="form-grid"><label>Quantità<input name="quantity" type="number" min="0.000001" step="any" required></label><label>Prezzo medio (€)<input name="price" type="number" min="0" step="any" required></label></div>
 <div class="dialog-actions"><button class="secondary" value="cancel">Annulla</button><button class="primary" id="saveHolding" value="default">Salva titolo</button></div></form></dialog>
 <div id="toast" role="status" aria-live="polite"></div>
+  <script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDlnuWcQn14d7ozfL16_7sJwwgrjZnisvM",
+  authDomain: "pikkio-alert.firebaseapp.com",
+  projectId: "pikkio-alert",
+  storageBucket: "pikkio-alert.firebasestorage.app",
+  messagingSenderId: "719192750291",
+  appId: "1:719192750291:web:51fa8e6f05408dc973bc26",
+  measurementId: "G-DQECGQFEJ8"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+window.pikkioAuthReady = firebase.auth()
+  .signInAnonymously()
+  .then(result => result.user)
+  .catch(error => {
+    console.error("Errore autenticazione PIKKIO:", error);
+    return null;
+  });
+</script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
 <script src="app.js"></script>
 </body></html>
