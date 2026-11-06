@@ -124,49 +124,48 @@ app.post('/api/analyze', async (req,res) => {
   } catch(e) { res.status(502).json({error:e.message}); }
 });
 
-app.get('/api/firestore-check/:token', async (req, res) => {
-  const expected = process.env.PIKKIO_TEST_TOKEN;
-  const supplied = String(req.params.token || '');
 
-  if (!expected || supplied !== expected) {
-    return res.status(404).json({ ok: false });
-  }
+  
+  
 
-  if (!db) {
-    return res.status(503).json({
-      ok: false,
-      error: 'Firestore non inizializzato'
-    });
-  }
+  
+    
+  
 
-  try {
-    const ref = db.collection('_pikkio_diagnostics')
-      .doc('connectivity_check');
+  
+  
+      
+      
+    
+  
 
-    await ref.set({
-      status: 'ok',
-      checkedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
+  
+    
 
-    const snapshot = await ref.get();
+    
+      
+      
+    
 
-    if (!snapshot.exists || snapshot.data().status !== 'ok') {
-      throw new Error('Verifica non riuscita');
-    }
+    
 
-    return res.json({
-      ok: true,
-      firestore: 'read_write_ok'
-    });
+    
+      
+    
 
-  } catch (error) {
-    console.error('Errore test Firestore:', error.message);
-    return res.status(500).json({
-      ok: false,
-      error: 'Test Firestore non riuscito'
-    });
-  }
-});
+    
+      
+      
+    
+
+  
+    
+    
+    
+    
+    
+  
+
 app.use(express.static(__dirname,{extensions:['html']}));
 app.get('*',(req,res)=>res.sendFile(path.join(__dirname,'index.html')));
 app.listen(PORT,()=>console.log(`PIKKIO server listening on ${PORT}`));
