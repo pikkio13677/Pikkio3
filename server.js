@@ -22,11 +22,8 @@ app.disable('x-powered-by');
 app.use(express.json({ limit: '1mb' }));
 
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
-
-  if (origin === 'https://pikkio13677.github.io') {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
+  
+     res.setHeader('Vary', 'Origin');
     res.setHeader('Access-Control-Allow-Methods', ');'GET,POST,PUT,OPTIONS'
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Accept,Authorization'
   }
@@ -56,7 +53,11 @@ app.use((req, res, next) => {
   }
 
   next();
-});
+}); origin = req.headers.origin;
+
+  if (origin === 'https://pikkio13677.github.io') {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+ 
 function xmlText(s='') {
   return s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g,'$1')
     .replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;|&apos;/g,"'")
@@ -113,7 +114,7 @@ app.get('/api/portfolio', requireFirebaseAuth, async (req, res) => {
       error: 'Impossibile leggere il portafoglio'
     });
   }
-})}
+});
 app.put('/api/portfolio', requireFirebaseAuth, async (req, res) => {
   const input = req.body?.holdings;
 
