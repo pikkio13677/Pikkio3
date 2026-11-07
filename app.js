@@ -310,8 +310,8 @@ setInterval(() => {
   loadNews();
   if (holdings.length) refreshPrices();
 }, 10 * 60 * 1000);
-$('#refreshPrices').addEventListener('click',refreshPrices);
-$('#runAI').addEventListener('click',async()=>{const box=$('#aiResult');box.innerHTML='<b>Analisi in corso…</b><p>Invio al motore AI configurato sul server.</p>';try{const r=await fetch('https://pikkio6-api.onrender.com/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({holdings,articles:newsItems})}),d=await r.json();if(!r.ok)throw Error(d.error||'Servizio AI non disponibile');box.innerHTML=`<b>Analisi AI · ${safe(d.model||'')}</b><p style="white-space:pre-wrap">${safe(d.analysis||'Nessun risultato')}</p><p>Analisi informativa generata il ${safe(d.createdAt||'')}. Verifica le fonti e non usarla come ordine di investimento.</p>`}catch(e){box.innerHTML=`<b>Analisi AI non disponibile</b><p>${safe(e.message)}. Configura OPENAI_API_KEY sul server e riprova.</p>`}});
+$('#refreshPrices').addEventListener('click',refreshPrices);Riprova tra poco. Se il problema continua, controlla la connessione con Gemini.
+$('#runAI').addEventListener('click',async()=>{const box=$('#aiResult');box.innerHTML='<b>Analisi in corso…</b><p>Invio al motore AI configurato sul server.</p>';try{const r=await fetch('https://pikkio6-api.onrender.com/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({holdings,articles:newsItems})}),d=await r.json();if(!r.ok)throw Error(d.error||'Servizio AI non disponibile');box.innerHTML=`<b>Analisi AI · ${safe(d.model||'')}</b><p style="white-space:pre-wrap">${safe(d.analysis||'Nessun risultato')}</p><p>Analisi informativa generata il ${safe(d.createdAt||'')}. Verifica le fonti e non usarla come ordine di investimento.</p>`}catch(e){box.innerHTML=`<b>Analisi AI non disponibile</b><p>${safe(e.message)}. </p>`}});
 try{
   const saved=JSON.parse(localStorage.getItem(KEY)||'[]');
   holdings=Array.isArray(saved)?saved.filter(h=>h&&typeof h.ticker==='string'&&Number(h.quantity)>0&&Number(h.price)>=0).map(h=>({...h,quantity:Number(h.quantity),price:Number(h.price)})):[];
