@@ -63,6 +63,31 @@
     <div class="section-head"><div><p class="eyebrow">I TUOI ASSET</p><h2>Portafoglio</h2></div></div>
     <div class="action-row"><button class="primary" id="addBtn">＋ Aggiungi titolo</button><button class="secondary" id="refreshPrices">↻ Aggiorna quotazioni</button><button class="secondary" id="exportCSV">⇩ Esporta CSV</button><label class="secondary upload">⇧ Importa CSV<input type="file" id="csvFile" accept=".csv,text/csv" hidden></label></div>
     <div id="portfolioList" class="holding-list"></div>
+        <section class="charts-stack" aria-label="Grafici del portafoglio">
+      <article class="chart-card">
+        <div class="chart-heading">
+          <div><p class="eyebrow">STORICO DEL PORTAFOGLIO</p><h3>Andamento nel tempo</h3></div>
+          <span class="chart-meta" id="performanceMeta">In attesa dei dati</span>
+        </div>
+        <div id="performanceChart" class="chart-content">
+          <p class="hint">Lo storico inizierà a raccogliersi quando saranno disponibili le quotazioni.</p>
+        </div>
+      </article>
+      <div class="chart-pair">
+        <article class="chart-card">
+          <div class="chart-heading"><div><p class="eyebrow">COMPOSIZIONE</p><h3>Allocazione</h3></div></div>
+          <div id="allocationChart" class="chart-content">
+            <p class="hint">Aggiungi investimenti per vedere la composizione.</p>
+          </div>
+        </article>
+        <article class="chart-card">
+          <div class="chart-heading"><div><p class="eyebrow">RISULTATO</p><h3>Profitti e perdite</h3></div></div>
+          <div id="pnlChart" class="chart-content">
+            <p class="hint">Le variazioni appariranno con quotazioni disponibili.</p>
+          </div>
+        </article>
+      </div>
+    </section>
     <p class="hint">CSV: ticker,nome,quantita,prezzo_medio — punto o virgola per i decimali. Per le azioni USA usa il ticker standard; per altri mercati può servire il suffisso del provider.</p><p class="hint" id="quoteStatus">Quotazioni non ancora aggiornate.</p>
   </section>
   <section id="radar" class="view">
