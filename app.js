@@ -19,6 +19,95 @@ function quoteInEUR(h){const q=quotes[h.ticker];if(!q||!Number.isFinite(Number(q
 function holdingMarkup(h,i){const current=quoteInEUR(h),cost=h.quantity*h.price,pnl=current===null?null:(current-h.price)*h.quantity,pct=cost>0&&pnl!==null?pnl/cost*100:null;return `<article class="holding"><div class="ticker-icon">${safe(h.ticker.slice(0,3))}</div><div class="holding-info"><b>${safe(h.name||h.ticker)}</b><small>${safe(h.ticker)} · ${h.quantity} quote · carico ${euro(cost)}${current===null?'':' · mercato '+euro(current*h.quantity)}</small>${pnl===null?'':`<small style="display:block;color:${pnl>=0?'#7fc9a0':'#e39a8b'}">${pnl>=0?'+':''}${euro(pnl)} (${pct>=0?'+':''}${pct.toFixed(2)}%) · ${safe(qDate(h.ticker))}</small>`}</div><div class="holding-value">${euro(cost)}<small style="display:block;color:var(--muted);font-weight:400">carico</small></div><button class="delete" data-edit="${i}" aria-label="Modifica ${safe(h.ticker)}" title="Modifica">✎</button><button class="delete" data-delete="${i}" aria-label="Elimina ${safe(h.ticker)}" title="Elimina">×</button></article>`}
 function qDate(t){const q=quotes[t];return q?`${q.currency||''} · ${q.asOf||'data non indicata'}`:''}
 function render(){const cost=holdings.reduce((s,h)=>s+h.quantity*h.price,0);const market=holdings.reduce((s,h)=>s+(quoteInEUR(h)??h.price)*h.quantity,0);const all=holdings.length>0&&holdings.every(h=>quoteInEUR(h)!==null);$('#totalValue').textContent=euro(all?market:cost);$('#totalLabel')?.replaceChildren(document.createTextNode(all?'Valore di mercato stimato':'Valore di carico'));$('#holdingCount').textContent=`${holdings.length} ${holdings.length===1?'strumento':'strumenti'}`;$('#homeHoldings').innerHTML=holdings.length?holdings.slice(0,4).map(holdingMarkup).join(''):'<p class="hint">Portafoglio vuoto: aggiungi un investimento.</p>';$('#portfolioList').innerHTML=holdings.length?holdings.map(holdingMarkup).join(''):'<p class="hint">Non hai ancora inserito investimenti.</p>';$$('[data-delete]').forEach(b=>b.addEventListener('click',()=>{const i=Number(b.dataset.delete);if(Number.isInteger(i)&&holdings[i]){holdings.splice(i,1);persist();toast('Titolo eliminato')}}));$$('[data-edit]').forEach(b=>b.addEventListener('click',()=>editHolding(Number(b.dataset.edit))));renderSignals()}
+function recordPortfolioSnapshot(){
+  if(!holdings.length)return;
+  const values=holdings.map(h=>quoteInEUR(h));
+  if(values.some(v=>v===null))return;
+  const total=holdings.reduce((s,h,i)=>s+values[i]*h.quantity,0);
+  const now=new Date();
+  const date=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0');
+  try{
+    const history=JSON.parse(localStorage.getItem('pikkio.portfolio.history.v1')||'[]');
+    if(history.length&&history[history.length-1].date===date){
+      history[history.length-1].value=total;
+    }else{
+      history.push({date,value:total});
+    }
+    localStorage.setItem('pikkio.portfolio.history.v1',JSON.stringify(history.slice(-365)));
+  }catch(e){}
+}
+
+function renderCharts(){
+  const allocation=$('#allocationChart');
+  const pnl=$('#pnlChart');
+  const performance=$('#performanceChart');
+  const meta=$('#performanceMeta');
+  if(!allocation||!pnl||!performance)return;
+
+  recordPortfolioSnapshot();
+
+  const colors=['#65b88a','#d6b45b','#719bd1','#bd83c9','#df8b72','#72b9bd'];
+  if(!holdings.length){
+    allocation.innerHTML='<p class="hint">Aggiungi investimenti per vedere la composizione.</p>';
+    pnl.innerHTML='<p class="hint">Nessun investimento presente.</p>';
+  }else{
+    const amounts=holdings.map(h=>(quoteInEUR(h)??h.price)*h.quantity);
+    const total=amounts.reduce((a,b)=>a+b,0);
+    let angle=0;
+    const segments=amounts.map((v,i)=>{
+      const start=angle;
+      angle+=total>0?v/total*360:0;
+      return `${colors[i%colors.length]} ${start}deg ${angle}deg`;
+    });
+    allocation.innerHTML=`
+      <div class="allocation-layout">
+        <div class="chart-donut" style="background:conic-gradient(${segments.join(',')})"></div>
+        <div class="chart-legend">
+          ${holdings.map((h,i)=>`<div><span style="color:${colors[i%colors.length]}">●</span> ${safe(h.ticker)} <b>${total>0?(amounts[i]/total*100).toFixed(1):0}%</b></div>`).join('')}
+        </div>
+      </div>`;
+
+    const results=holdings.map(h=>{
+      const current=quoteInEUR(h);
+      return {h,pnl:current===null?null:(current-h.price)*h.quantity};
+    });
+    const max=Math.max(1,...results.map(x=>Math.abs(x.pnl||0)));
+    pnl.innerHTML=results.map(x=>{
+      const positive=x.pnl!==null&&x.pnl>=0;
+      const width=x.pnl===null?0:Math.abs(x.pnl)/max*100;
+      return `<div class="pnl-row"><div><b>${safe(x.h.ticker)}</b><span>${x.pnl===null?'Quotazione non disponibile':(positive?'+':'')+euro(x.pnl)}</span></div><div class="pnl-track"><div class="pnl-bar ${positive?'positive':'negative'}" style="width:${width}%"></div></div></div>`;
+    }).join('');
+  }
+
+  let history=[];
+  try{
+    history=JSON.parse(localStorage.getItem('pikkio.portfolio.history.v1')||'[]');
+  }catch(e){}
+  if(!history.length){
+    performance.innerHTML='<p class="hint">Lo storico inizierà con la prima quotazione valida.</p>';
+    if(meta)meta.textContent='In attesa dei dati';
+    return;
+  }
+  if(meta)meta.textContent=history.length+' rilevazioni';
+  if(history.length===1){
+    performance.innerHTML='<p class="hint">Primo rilevamento: '+euro(history[0].value)+'. Lo storico crescerà con i prossimi aggiornamenti.</p>';
+    return;
+  }
+  const values=history.map(x=>x.value);
+  const min=Math.min(...values),max=Math.max(...values);
+  const range=max-min||1;
+  const points=values.map((v,i)=>{
+    const x=20+i*560/(values.length-1);
+    const y=155-(v-min)/range*125;
+    return `${x},${y}`;
+  }).join(' ');
+  performance.innerHTML=`
+    <div class="performance-value">${euro(values[values.length-1])}</div>
+    <svg viewBox="0 0 600 180" role="img" aria-label="Andamento storico del portafoglio">
+      <polyline points="${points}" fill="none" stroke="#65b88a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <p class="hint">${history[0].date} — ${history[history.length-1].date}</p>`;
+}
 function go(tab){$$('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));$$('.view').forEach(v=>v.classList.toggle('active',v.id===tab));window.scrollTo({top:0,behavior:'smooth'})}
 $$('.tab').forEach(b=>b.addEventListener('click',()=>go(b.dataset.tab)));$$('[data-go]').forEach(b=>b.addEventListener('click',()=>go(b.dataset.go)));
 const dlg=$('#holdingDialog');let editIndex=null;function editHolding(i){const h=holdings[i];if(!h)return;editIndex=i;const f=$('#holdingForm');f.elements.ticker.value=h.ticker;f.elements.name.value=h.name||'';f.elements.quantity.value=h.quantity;f.elements.price.value=h.price;$('#dialogTitle').textContent='Modifica investimento';dlg.showModal()}
