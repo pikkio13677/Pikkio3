@@ -188,11 +188,11 @@ app.get('/api/fx/:currency', async (req,res) => {
 app.post('/api/analyze', async (req, res) => {
   const apiKey = process.env.OPENAI_API_KEY;
 
-  if (!apiKey) {
-    return res.status(503).json({
-      error: 'OPENAI_API_KEY non configurata sul server'
-    });
-  }
+  
+    
+      
+  
+  
 
   const model = 'gpt-4o-mini';
 
@@ -261,69 +261,53 @@ app.post('/api/analyze', async (req, res) => {
   }
 });
 
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    return res.status(503).json({error:'GEMINI_API_KEY non configurata sul server'});
-  }
+  
+  
+    
+  
 
-  const model = 'gpt-4o-mini';
-  const holdings = Array.isArray(req.body?.holdings) ? req.body.holdings.slice(0,50) : [];
-  const articles = Array.isArray(req.body?.articles) ? req.body.articles.slice(0,30) : [];
-  const input = JSON.stringify({
-    portafoglio: holdings.map(h => ({
-      ticker: String(h.ticker || '').slice(0,20),
-      nome: String(h.name || '').slice(0,80)
-    })),
-    notizie: articles.map(a => ({
-      titolo: String(a.title || '').slice(0,300),
-      fonte: String(a.domain || '').slice(0,100),
-      url: String(a.url || '').slice(0,500)
-    }))
-  });
+  
+  
+  
+  
+        
+    
+      
+        
+          
+            
+          
+        
+        
+          
+          
+        
+        
+      
+  
 
-  try {
-    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-      method: 'POST',
-      headers: {
-        'x-goog-api-key': apiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        systemInstruction: {
-          parts: [{
-            text: 'Sei l’assistente informativo di PIKKIO. Analizza le notizie fornite e indica solo collegamenti plausibili con i titoli presenti. Distingui fatti, ipotesi e incertezze; cita i titoli delle notizie e le fonti fornite. Non dare ordini di acquisto o vendita, non inventare dati, non presentare una correlazione come causalità. Se le informazioni sono insufficienti, dichiaralo. Rispondi in italiano, in modo chiaro e prudente.'
-          }]
-        },
-        contents: [{
-          role: 'user',
-          parts: [{ text: 'Analizza questi dati del portafoglio e queste notizie:\n' + input }]
-        }],
-        generationConfig: { maxOutputTokens: 900 }
-      })
-    });
+    
+    
+    
+        
+    
+    
 
-    const data = await r.json();
-    if (!r.ok) {
-      return res.status(r.status).json({
-        error: data.error?.message || 'Errore del servizio Gemini'
-      });
-    }
+    
+    
+      
+      
+      
 
-    const analysis = (data.candidates || [])
-      .flatMap(candidate => candidate.content?.parts || [])
-      .map(part => part.text || '')
-      .filter(Boolean)
-      .join('\n');
+    
+      
+    
 
-    if (!analysis) {
-      return res.status(502).json({error:'Gemini non ha restituito un testo di analisi'});
-    }
+    
+  
+    
+  
 
-    res.json({analysis, model, createdAt:new Date().toISOString()});
-  } catch (e) {
-    res.status(502).json({error:e.message});
-  }
-});
 
 
 
@@ -344,7 +328,9 @@ app.post('/api/analyze', async (req, res) => {
   
     
 
+      
     
+
       
       
     
@@ -353,7 +339,10 @@ app.post('/api/analyze', async (req, res) => {
 
     
       
+      
     
+  
+
 
     
       
