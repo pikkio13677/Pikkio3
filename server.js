@@ -185,7 +185,7 @@ app.get('/api/fx/:currency', async (req,res) => {
   } catch(e) { res.status(502).json({error:e.message}); }
 });
 app.post('/api/analyze', async (req,res) => {
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     return res.status(503).json({error:'GEMINI_API_KEY non configurata sul server'});
   }
